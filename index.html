@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Input Tabungan Per Kelas — SMPN 4 Majenang</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: #1a202c; padding-bottom: 90px; }
+  header { background: linear-gradient(135deg, #1a5632, #2f855a); color: #fff; padding: 20px 16px 16px; text-align: center; }
+  header h1 { font-size: 1.35rem; }
+  header p { opacity: .9; font-size: .88rem; margin-top: 4px; }
+  .badge { display: inline-block; margin-top: 9px; padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 600; background: #c6f6d5; color: #22543d; }
+  .badge.demo { background: #fefcbf; color: #744210; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 16px; }
+  .panel { background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 14px; }
+  .panel label { font-size: .82rem; font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .row > div { flex: 1; min-width: 150px; }
+  select, input[type="date"], input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: .95rem; background: #fff; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { background: #ebf8ff; color: #2a4365; border: 1px solid #bee3f8; padding: 3px 10px; border-radius: 999px; font-size: .8rem; }
+  .chip.aktif { background: #276749; color: #fff; border-color: #276749; }
+  .massal { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+  .massal > div { flex: 1; min-width: 150px; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #276749; background: #fff; color: #276749; font-weight: 700; cursor: pointer; font-size: .88rem; }
+  .btn.utama { background: #276749; color: #fff; }
+  .btn.bahaya { border-color: #c53030; color: #c53030; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); font-size: .92rem; }
+  th { background: #276749; color: #fff; text-align: left; padding: 9px 10px; font-size: .85rem; }
+  td { padding: 7px 10px; border-top: 1px solid #edf2f7; vertical-align: middle; }
+  td.no, td.nis { text-align: center; color: #4a5568; }
+  .tersimpan { font-size: .78rem; color: #276749; display: block; }
+  .berubah { background: #fffff0; }
+  input.nominal { width: 130px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: .95rem; text-align: right; }
+  input.nominal:focus { outline: 2px solid #68d391; border-color: transparent; }
+  .bawah { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #e2e8f0; box-shadow: 0 -2px 10px rgba(0,0,0,.06); }
+  .bawah .dalam { max-width: 860px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .total { font-size: .95rem; }
+  .total b { color: #1a5632; font-size: 1.05rem; }
+  button.simpan { margin-left: auto; background: #276749; color: #fff; border: none; padding: 12px 22px; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+  button.simpan:disabled { background: #a0aec0; cursor: wait; }
+  #laporan { display: none; margin-top: 14px; }
+  #laporan.ok { display: block; background: #f0fff4; border: 1px solid #9ae6b4; }
+  #laporan.gagal { display: block; background: #fff5f5; border: 1px solid #feb2b2; }
+  .kecil { font-size: .82rem; color: #718096; margin-top: 6px; line-height: 1.5; }
+  .scroll { overflow-x: auto; border-radius: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>💰 Input Tabungan Per Kelas</h1>
+  <p>SMP Negeri 4 Majenang — setoran masuk otomatis ke sheet kelas, baris nama, dan kolom tanggalnya</p>
+  <div id="badge" class="badge demo">Memuat…</div>
+</header>
+<div class="wrap">
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label for="kelas">Kelas</label>
+        <select id="kelas"></select>
+      </div>
+      <div>
+        <label for="tanggal">Tanggal Menabung</label>
+        <input type="date" id="tanggal">
+      </div>
+      <div>
+        <label for="saring">Saring Nama / NIS</label>
+        <input type="text" id="saring" placeholder="Contoh: ketik nama…">
+      </div>
+    </div>
+    <div class="kecil">Tanggal yang sudah ada di sheet kelas ini:</div>
+    <div class="chips" id="daftarTanggal"><span class="kecil">—</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="massal">
+      <div>
+        <label for="nominalMassal">Isi Sekaligus — nominal yang sama untuk banyak murid</label>
+        <input type="text" id="nominalMassal" inputmode="numeric" placeholder="Contoh: 5000">
+      </div>
+      <button class="btn utama" id="btnSemua">Terapkan ke Semua Murid</button>
+      <button class="btn" id="btnKosong">Terapkan ke yang Masih Kosong</button>
+      <button class="btn bahaya" id="btnBersih">Bersihkan Isian</button>
+    </div>
+    <p class="kecil">Setelah diterapkan, nominal tiap murid tetap bisa diedit satu-satu pada tabel di bawah sebelum disimpan.</p>
+  </div>
+
+  <div class="scroll"><table>
+    <thead><tr><th style="text-align:center">No</th><th>Nama</th><th style="text-align:center">NIS</th><th style="text-align:right">Nominal Setoran (Rp)</th></tr></thead>
+    <tbody id="tabel"></tbody>
+  </table></div>
+  <p class="kecil">Nilai yang sudah tersimpan untuk tanggal terpilih tampil terisi pada kolom nominal — ubah langsung di situ bila ada yang salah, lalu tekan Simpan Setoran untuk memperbarui. Mengosongkan isian seorang murid berarti murid itu tidak ikut disimpan pada putaran ini.</p>
+
+  <div id="laporan" class="panel"></div>
+</div>
+
+<div class="bawah"><div class="dalam">
+  <div class="total">Terisi: <b id="jmlIsi">0 murid</b> • Total: <b id="totalRp">Rp0</b></div>
+  <button class="simpan" id="btnSimpan">Simpan Setoran</button>
+</div></div>
+
+<script>
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwjzdHwEr4V2uupuo_ZSESCsCFbnCexPN_OOYlZA8KoY8t4SS_uyfMgqvgM9eMDyZcf/exec';
+const KELAS18 = ['7A','7B','7C','7D','7E','7F','8A','8B','8C','8D','8E','8F','9A','9B','9C','9D','9E','9F'];
+const ROSTER = {"7A":[["3041","ADRIAN GILANG ARAFA"],["3048","AQSAL MAULANA IBRAHIM"],["3050","AULIA IZZATUNNISA"],["3070","DENI SETIAWAN"],["3072","DIKASAPUTRA"],["3075","DINDA AULIA HASANAH"],["3091","GILANG PRATAMA"],["3095","IQBAL MAULANA"],["3100","KAESAR ALFAZRI SETIAWAN"],["3101","KARLINA"],["3102","KENZY ALFAJRI"],["3109","KIAN ARGADANI"],["3123","MUHAMAD ROBI"],["3127","NACITA BELLA PERTIWI"],["3128","NADA APRILIYANI"],["3137","RAFAEL"],["3142","RAISHA SALSABILA"],["3153","RENO SETIAWAN"],["3155","REVAN NATA WIJAYA"],["3159","RIHANATUL HUSNA"],["3160","RIRI NURLAELA"],["3162","RISKA PEBRIYANI"],["3172","SARDI KUSWORO"],["3176","SHAKILA SYAFA WULANDARI"],["3183","SRI DWIYANI"],["3187","SYFA DWI AZZAHRA"],["3196","TIFANI FERONIKA AGATHA"],["3211","WINI FAIHA NADA ZALFA"],["3213","WULAN RAHAYU SUKMA"],["3215","ZAHIRA AYUDIA INNARA"]],"7B":[["3042","AISYAH NUR ROHMAH"],["3052","AURA NOVIKA KIRANA"],["3053","AURA NOVITA KIRANA"],["3059","CINDY NURAENI"],["3065","DAVANA MAULANA PUTRA"],["3073","DIKI RIYANTO SIDIK"],["3078","DZAKIRA AFTANI"],["3079","EARLYTA SALSABILA"],["3084","FAREL DWI SAPUTRA"],["3087","FAZRI SUBHAN"],["3111","LILAH MUTPAINAH"],["3115","LULU BILQIS ALFAIZAH"],["3116","LUTHFIE SAKHI ZAIDAN"],["3125","NABILA NUR SITI"],["3130","NAJWA KHAIRA WILDA"],["3131","NAZRIEL AQILA RAMADHAN"],["3135","RAFA HAFIZ ARDIANSYAH"],["3139","RAFI WILIS GIOVANO"],["3146","RASYA ADITIYA"],["3154","REVAN ALDI PRATAMA"],["3161","RIRIN YULIANTI"],["3163","RISTA AWLIA"],["3169","SALSA SALFIANA BELA"],["3173","SATRIA PRATAMA"],["3175","SEPTIAN"],["3189","TATA AYU ROMADONA"],["3194","TIAN RIZAL SAPUTRA"],["3203","TRI NANDA ADITYA"],["3205","VELISA AZZAHRA"],["3207","WATI SUSANTI"]],"7C":[["3047","ALYA NABILA ZAHRA"],["3054","BAAS FADILAL AHSAN"],["3055","CANTIKA BELLA"],["3062","DANU DESTIAN NUGRAHA"],["3069","DELA OKTAVIANA"],["3071","DENIS FEBRIAN MAULANA"],["3081","ESLY HAFIZA AQUIN"],["3083","FAJRI RIZQI RAMADHAN"],["3085","FAUZAN NASRUL"],["3088","FIKRI ALFIN SAPUTRA"],["3092","HISAM RAFI FADILAH"],["3096","IQBAL RIZKI ROMADON"],["3106","KHALYSTA MEILANY"],["3107","KHASANATUNZZAHRO"],["3108","KHOERUL ANWAR"],["3110","LIDYA OKTASILA"],["3119","MEGA RIZKY IBRAHIM"],["3124","MUHAMMAD FADIL"],["3129","NADIYAH SYAKIB PERMANA"],["3138","RAFARDHAN AKMAL ALKHALIFI"],["3167","SABRINA ADELIA"],["3174","SAVIRA ISNAENI"],["3178","SHEPTIAN MUAMAR IQBAL"],["3181","SONI APRIANSYAH"],["3191","TAUFIK NUR HIDAYAT"],["3199","TINA SAPITRI"],["3208","WIDIA FEBRIYANTI"],["3210","WILLY GATRA"],["3214","XENA CAHYA KAMILA"],["3218","ZULFA NUR ALIYAH"]],"7D":[["3049","ARIQHA FAUZIA"],["3057","CHINTYA SEPTIANI"],["3064","DAVA ERYAWAN"],["3067","DEA NUR AZIZAH"],["3068","DEFITRI AGUSTINA"],["3077","DITA AGUSTIN MAHARANI"],["3080","EMANIAR ALIKA BALQIS"],["3086","FAWAZ FAUZIYAH ARKANA"],["3093","IBNU WAFI ARRIZQI"],["3105","KHAERUL RAMADANI ARIPIN"],["3113","LUCKI IZA MAHENDRA"],["3114","LUDI HARLINO"],["3117","M FAHREL ARIZKI"],["3120","MEILIN PURNAMASARI"],["3126","NABILA SILVANI"],["3133","RACSELI ULFAIRA"],["3144","RAMA ADI SAPUTRA"],["3145","RAPA SAPUTRA"],["3149","REGINA DWI OKTAVIA"],["3151","RENITA ANGGRAENI"],["3165","RIZKI SAPUTRA"],["3179","SHIREN SAGITA"],["3182","SONU APRIANSYAH"],["3186","SYAPUTRA RESKY"],["3190","TAUFAN NUR FAUZI"],["3193","TEMI REVANDI"],["3198","TIFFANI LITUHAYU ADZKIA"],["3209","WILDAN AHMAD MUSTOFA"],["3212","WULAN NABILAH"],["3217","ZAHWA MAULIDA"]],"7E":[["3040","ADI GUNAWAN"],["3045","ALIKA DWI YULIANI"],["3051","AURA NISA RAHMAULIDYA"],["3058","CIKA INDAH OKTAVIANI"],["3063","DANY DAFFA FAEZHA"],["3066","DEA MEILA SARI"],["3076","DINDA SAFITRI"],["3089","FYKA ALFYANO"],["3094","ILHAM SYAHPUTRA"],["3099","JAJANG MIFTAH FARIZ"],["3103","KEYLA AGUSTINA"],["3118","MARINA"],["3121","MEISYA AFIFA SYAHIRA"],["3136","RAFA YUSUF NURBOWO"],["3140","RAFI YUSUF NURBOWO"],["3148","REFI YANA SYERIN HOTIMAH"],["3152","RENO ADITTYA PRATAMA"],["3156","REZZA MAULANA PRATAMA"],["3157","RIDWAN AGUSTIAN"],["3158","RIFALDO IQBAL SETIAWAN"],["3168","SAHNAN ARYANTO"],["3170","SANDI"],["3177","SHEINNA ANASTASYA"],["3184","SRI WULAN DARI"],["3185","STEVANO APRILIANSYAH HIDAYAT"],["3192","TEGAR ANGGA SAPUTRA"],["3197","TIFANI JUNI YANTI"],["3201","TITA DWI ANGGRAENI"],["3202","TOPIK KHOERULLOH"],["3204","TRI RAHAYU OKTAVIA"]],"7F":[["3043","AKMAL ASADIL ALAM"],["3044","ALIA AGUSTIN"],["3046","ALIYA NAYLA HARYANI"],["3056","CANTIKA SEPTIANA PUTRI"],["3060","CITRA STEVANI"],["3061","DAFA ALFIAN AL KHALIFI"],["3074","DIMAN NASUTION"],["3082","FAEZA RAFAEL ZIA RAMADHAN"],["3090","GILANG NUR HIDAYAH"],["3097","IREN RAHMA RAHAYU"],["3098","IWAN RUKMANA"],["3104","KHAELA SULISTIFANI"],["3112","LINA APRILIA"],["3122","MUHAMAD NUR FAHREZA"],["3132","PUTRI CAHYANI SURYANINGSIH"],["3134","RADITIA MUHAMAD"],["3141","RAHMA NABILA SITI AULIA"],["3143","RAISYA AZZAHRA"],["3147","REFAN AL FARIZ"],["3150","REHAN RAMADAN"],["3164","RIZKI MUBAROK"],["3166","ROFIQ MARUF"],["3171","SANDY ADITIYA PRATAMA"],["3180","SINTIYA WIDIYA PUTRI"],["3188","SYIFA OKTAVANIA"],["3195","TIARA WIDIYANTI"],["3200","TIRTA MAULANA"],["3206","WAHYU SAPUTRA"],["3216","ZAHRA AULIA"]],"8A":[["2859","AFIKAH RISKIANA"],["2868","ARYA SAPUTRA"],["2870","AURELIA RAMADINA"],["2872","CAHAYA LIFIYANA"],["2878","CHELSEA OLIVIA"],["2880","CICA MARTHA SOLIHA"],["2896","DENDRA ETHAN PRATAMA"],["2903","DIMAS AL FARIZI"],["2918","GILANG MAULANA"],["2920","HAMDANI ALFARIJI"],["2923","IKE WULANDARI"],["2927","IRAWAN SAFUTRA"],["2932","KANSA AZALEA"],["2942","KHOERUL ANAM"],["2944","KHOLIQ HIDAYAT"],["2949","MUHAMAD FAHMI AL PIKRI"],["2955","NABILA NUR AENI"],["2958","NAUFAL GRACIO"],["2970","RAPI PIRMANSAH"],["2982","ROHMAH MUBAROKAH"],["2984","RUDI PRATAMA"],["2995","SENDI RAMDAN"],["2997","SETIA WIDODO"],["2998","SHOFIAH RUKMANA"],["2999","SILVIA APRILIA"],["3006","SYIFA ADELIA"],["3007","TAEFANI ZAENITA"],["3008","TALITA PEBRIANTI RAHAYU"],["3025","WAHYU NUGROHO"],["3033","YAMIN KHOIRUL HUDA"]],"8B":[["2857","AFFIKA MEI MULIA"],["2869","ASIFA NUR AZIZAH"],["2889","CITRA RAMA DANIYA"],["2892","DANIEL ALVES"],["2907","DWI EKA LESTARI"],["2909","DZAKI FADHIL ARDHANA"],["2911","EKA KARDIMAS"],["2914","FAISA NURUL FALAH"],["2915","FAUZAAN NUR RIZQIE"],["2922","IFAN GUNAWAN"],["2924","INAYAH RAFIAH SAKHI"],["2928","IRGI PRATAMA PUTRA"],["2929","IRWAN PUJI SANTOSO"],["2938","KESYA AMELIA PUTRI"],["2943","KHOLIK PURNAMA"],["2950","MUHAMAD MANSUR"],["2963","RAFA ANDREA"],["2972","RERE NURAENI"],["2973","RESTU HADI PRATAMA"],["2978","RIZKI MALIK MUDOFAR"],["2993","SELLI MUTIA"],["3000","SISKA AMELIA PUTRI"],["3003","SOVI AMELIA"],["3009","TANIA WULANDARI"],["3014","THITAN JISIO"],["3015","THUFAIL DWI NUGROHO"],["3018","TIKA NURAENI"],["3020","TOLIB MAULANA"],["3026","WENDI SAPUTRA"],["3031","WITA OKSELIA"]],"8C":[["2856","ADRIAN RIVALDO"],["2862","ALDI SATRIO"],["2864","ANISA TRIWAHYUNI"],["2873","CAHYA"],["2874","CALISTA DWI ASTI"],["2881","CIKA APRIYANI"],["2887","CINTIA ANDI PUTRI"],["2888","CITRA AMELIA"],["2890","CUCU ADI SAPUTRA"],["2901","DIKI HARTOTO"],["2904","DINDA AMELIA"],["3039","DWI MULYANI"],["2910","DZAZKIAH AZAHRA"],["2925","INDRA SETIAWAN"],["2940","KHAIRUL INDRA KUSUMA"],["2947","LATISA SETIASIH"],["2957","NASYA PUTRI AZAHRA"],["2962","NURLAILA DWI STIYANI"],["2966","RAFI GILANG SAPUTRA"],["2974","RESTU ILHAM PRAKOSO"],["2975","REVA ROSIDAH"],["2977","RIO SETIAWAN"],["2981","ROFIQ FEBRIANA"],["2983","ROSITA"],["2991","SATRIYA PUTRA"],["2996","SETIA BUDI"],["3011","TASYA TIAN NOVITA"],["3019","TIMU"],["3029","WILDAN ADITIA"],["3030","WISNU ADI KUSUMA"]],"8D":[["3037","AFIKA APRIYANTI"],["2860","AISYA PUTRI ARINDA"],["2879","CHUCU NUR HIDAYAH"],["2884","CINTA KUROTA A`YUN"],["2891","DANICA ELYSIA RAKHSANDRINA"],["2898","DEVITA OKTOVIANY"],["2899","DIAS ASTUTI"],["2902","DIKI SETIAWAN"],["2912","FACHMI IDRIS"],["2917","GHAIZAN RAYKA RAFANDRA AQLAN"],["2930","ISNAN RISYANTO"],["2931","KAAMILA NUURUL A'ENI"],["2939","KHAERUL SAPUTRA"],["2945","KISBAL ADYTIA MAULANA"],["2954","MUHAMMAD NIZAM ZULFIKAR"],["2956","NADIA AYU REISA"],["2965","RAFFI DWI ARYASATYA"],["2969","RAISHA PUTRI NATASYA"],["2971","RERE FEBRIANTI"],["2980","RIZKY ADITYA"],["2990","SATRIA AJI SAPUTRA"],["2994","SENDI ALFIANSYAH"],["3001","SISKA DWI PEBRIYANTI"],["3005","SULIS TIA PEBRI YANI"],["3012","TATA JUWANTARA"],["3021","TOPAN ADITYA PRATAMA"],["3023","WA'AJDI MUHAMAD JEPRIYANTO"],["3027","WIDI ANDIKA PRATAMA"],["3032","WIWIK SAGITA"],["3035","ZAHRA AULIA"]],"8E":[["2858","AFGAN RIZQI MASDZULFIKAR MUNTASIR"],["2863","ALIF SEAN IBRAHIM"],["2865","ANITA GRELITA KEIZIA UTAMI"],["2867","AQBIL MUHAMMAD RIZKI"],["2885","CINTA LETISYA PUTRI"],["2893","DARWIYANTI ANANDA"],["2894","DAVIN ADI PUTRA PRATAMA"],["2900","DIKEN AHMAD SAPUTRA"],["2908","DWI LUTFIANA ANAFI"],["2913","FAHRI WIBOWO"],["2916","FIRMANSYAH"],["2933","KEISHA ALMIRA PUTRI"],["2934","KELANA PRASRAYA MAHARDIKA"],["2937","KENZA EGIANA AL VARO"],["2941","KHALILA DWI SAFITRI"],["2946","KOSIM"],["2951","MUHAMMAD ADRIAN"],["2953","MUHAMMAD HAYKAL ANSHORI"],["2961","NUR KHODIJAH"],["2964","RAFA GILANG SAPUTRA"],["2967","RAFIF BAHTIAR"],["2987","SALSABILA AULIYANI HERIBOWO"],["2989","SANDRINA MEILANI"],["3220","SARAH SEPTIANI"],["2992","SELA AMELIA"],["3004","SRI RAHAYU"],["3010","TASYA HANIFIA PUTRI"],["3013","TETY JUWITA CAROLIN"],["3016","TIARA JULIANTI"],["3028","WIDIYA OKTOVIANA"],["3034","YELIS PUTRI ANGGELA"]],"8F":[["2861","AJENG ARUNI CANDRA"],["2866","ANNAS FAZRI AL BANI"],["2871","AZIS SAPUTRA"],["2875","CARLI"],["2876","CARSINI"],["2877","CASWIN ANDRIYANTO"],["2882","CIKO MAULANA"],["2883","CINDY SEPTIANI"],["2886","CINTA NURPADILAH"],["2895","DEDEN ALIANSYAH"],["2905","DINDA NUR AZIZAH"],["2906","DINI SEPTIANI"],["3219","GHANIA YUNTAFA SUGIARTO"],["2919","HAFID MUZAKI"],["2921","HANIPAM NUR HIDAYAT"],["2926","INTAN NURAENI"],["2935","KELVIN DWI PRASTYO"],["2936","KENJI AHMAR MAULANA"],["2948","LILIS SETIASIH"],["2952","MUHAMMAD DAFA AMANULLAH"],["2959","NAYLA"],["2960","NUR JIHAN FAUZIAH"],["2976","RIA AMELIA"],["2979","RIZKI NURROHMAN"],["2985","SAHRUL APRILYANA"],["2986","SALMAN GILANG PERMANA"],["2988","SAMSUL BAHRI"],["3002","SITI NURJANAH"],["3017","TIFANY JUNIAR TASTIANKA"],["3022","VICKY CANDRIANSYAH"],["3024","WAFA ANISAH"]],"9A":[["2684","AISAH"],["2687","AUREL DWI NOVELLIA"],["2692","BERNALIS AGASTIAR"],["2693","BINTANG ALYSA"],["2703","DAFA RIZKIAN"],["2715","DIKA AGUS NURROHMAN"],["2719","DIMAS OKATAMA"],["2745","JUHA EGA SAPUTRA"],["2746","KALIFAH"],["2747","KAMELIA"],["2751","KASTO"],["2752","KAVIEGO"],["2758","KIKI FITRIYANI"],["2762","MAY SAPUTRI"],["2776","REJA WISMA PERDANA"],["2790","RIZKY SAPUTRA"],["2797","SALSABILA SHOFIYAH ADIVA"],["2854","SIDIK MAULANA"],["2808","SOFYAN REDO RANJANA"],["2820","TEGAR NOPA RIYADI"],["2823","TIAR BAGUS AJI MAHESA"],["2825","TIFANI KEYSA AZZAHRA"],["2832","WENDY HADI PERMANA"],["2834","WIDIYA ADZAHRA APRILIANI"],["2835","WIKKA NATALIA DWI PUTRI"],["2839","WINA AMELIA"],["2842","WISNU ABDULAH"],["2847","YOGA SAPUTRA"]],"9B":[["2676","AATHIFAH VIKA KAMILLAH"],["2688","AUREL NOVITA KHAMALA"],["2696","CANTIKA ARYANA PUTRI"],["2698","CICI ADELIA"],["2700","CITRA ANINDIA PUTRI"],["2704","DANDI RESTU INDRAFATA"],["2705","DANI ABDUL ROHIM"],["2720","DIRA"],["2723","EGI ANDIKA"],["2724","EKA SAPUTRA"],["2729","FAHMI AL FARIZ"],["3036","FAHYA AZAHRA NUR ASIM"],["2753","KELVIN FACHRU RAMADHAN"],["2759","KIKI LINDASARI"],["2763","MUHAMMAD IQBAL"],["2766","MUHAMAD MUGHNI NURUL AZMI"],["2779","REVAN ADITIA"],["2783","RIKI BAHTIAR"],["2785","RINDI"],["2786","RIRIN AMELIA"],["2791","RIZQY FATTAHILLAH"],["2792","SAEPUL JAELANI"],["2802","SETIYA NUR CAHYATI"],["2809","SUCI FITRIYANI"],["2816","TAUFAN ALI MASKUR"],["2829","TRIYANINGSIH"],["2838","WILYANA ANGELICHA PUTRI"],["2843","WISNU APRIANSAH"]],"9C":[["2689","AZIZZAH ANGGRAENI"],["2690","AZRIEL RIZKY NOVRIANSYAH"],["2691","BAYU TIRTA KUNCORO"],["2694","CACA ANDHIYANTO"],["2699","CISKA LISVIKA"],["2701","CITRA KARISMA PUTRI"],["2702","CYELLO LESMANA"],["2722","DRIANTO ANDRE KUSMAWAN"],["2726","ELSA DWI ANJANI"],["2732","FUAT HASAN"],["2735","GIAN ADITYA MAHYA"],["2740","ILHAM"],["2755","KESYA PUTRA ADITIA"],["2760","KRISNA STIAWAN"],["2761","LULU FEBRIANI SHABIHAH"],["2764","MUHAMAD IRFAN"],["2768","NADHIA EVITA DEWI"],["2771","OKTAVIANI"],["2784","RINA SAPITRI"],["2788","RISKI"],["2799","SATRIO"],["2815","TASYA DWI WIDIYANTI"],["2819","TEGAR ALFIANTO"],["2822","TIA MONITA"],["2827","TOMI PRATAMA"],["2853","TRI ALFIYANSAH"],["2841","WINDA MELIANI"],["2844","WISNU GALIH RADITYA"]],"9D":[["2680","ADIT TRIYANA"],["2681","ADRIAN RAFFA RADHITYA"],["2682","AFIKA"],["2709","DELISTA NUR ADHA"],["2712","DERI FEBRIYANA"],["2713","DHIKI PERMANA"],["2718","DILA"],["2721","DITO SEPTIANO"],["2733","GALIH PRIYADI"],["2736","GIBRAN PRATAMA PUTRA"],["2741","IMAM PAHREZZA"],["2749","KARISSA AQILA PUTRI"],["2767","NABILA NURAENI"],["2770","NOVA ELINA"],["2775","RAFI ABDULGANI"],["2777","RENDI"],["2781","REVAN ARDIYANSAH"],["2787","RIRIN SAPITRI"],["2793","SAHRUL"],["2800","SAYHAN FAUZAN ABDILLAH"],["2803","SHABRINA KHAERUN NISA"],["2804","SILMAN MAULANA"],["2806","SINDY APRILIYA"],["2813","TANIA"],["2814","TAOFIK ISMAIL"],["2821","THYAR RIZKY PRATAMA"],["2831","VITA SILVIANI"],["2848","ZAHRA RASWA AULIA"]],"9E":[["2677","ABDUL GHANI"],["2685","ALVIN SAPUTRA"],["2707","DAYU APRIYANTO"],["2708","DEDEN SAPUTRA"],["2710","DENAYA SEPTIANI"],["2717","DIKI SATRIO"],["2727","ENJELIA PRATIWI"],["2728","ERIK EKA SUJATMIKO"],["2738","HAIRUL IHSAN ARIP MAULANA"],["2739","HUDA JYNU RIJKI"],["2748","KANISA AWLIYA HABSARI"],["2756","KEYSA FEBRIYANI"],["2757","KHOERUL ANGGA"],["2772","PUTRI VIRNANDA"],["2782","REVITA NUR FADILLAH"],["2794","SAIKOH NUR AJIZAH"],["2798","SATRIA NUR HIDAYAT"],["2801","SENIA MULYAWATI"],["2805","SILVIA NUR VADILAH"],["2807","SIPAN KURNIAWAN"],["2817","TAUFAN NUR FAUZI"],["2824","TIARA NUR AMELIA"],["2826","TIO APRILIO"],["2828","TRI WAHYU WIDADI"],["2836","WILDAN"],["2840","WINDA"],["2845","WISTI AMEYLIA"],["2846","YAZID NAILUL HUDA"]],"9F":[["2679","ADAM FIRMANSYAH"],["2686","ANTON DWY SAPUTRA"],["2695","CAHYA AGUS SAPUTRA"],["2706","DAVA DWI SAPUTRA"],["2711","DENI ALFIANSYAH"],["2716","DIKA SINTIA"],["2725","ELMIRA DWI AISHA"],["2731","FERNANDO DANI SETIAWAN"],["2734","GANDARI JELITA PUTRI"],["2737","HABIB ANWAR RABANA"],["2742","INTAN RAUDLATUSYARIFAH"],["2743","IRFAN OKTO ADITIYA"],["2744","IZAZ FAHMI"],["2855","JAMI LATUN ROMADONA"],["2750","KARTIKA NUR SYAIFA"],["2754","KENDI SATRIO"],["2769","NAZWA NAYLAL MAROM"],["2773","PUTRI WIJAYANTI"],["2774","RAEFFAN SEFRIAN"],["2789","RISSA AMELIA PUTRI"],["2795","SAKTI KALIMAS"],["2796","SALSABILA"],["2810","SYAHRIL TOGI ATIDI PRATAMA"],["2811","SYAMSUL ILYAS"],["2812","SYIFA NUR AFIFAH"],["2830","TYAR DWI SAPUTRA"],["2833","WENI ENJELIKA"],["2837","WILI ANGGORO"]]};
+const DEMO = !WEBAPP_URL;
+
+let siswaAktif = [];   // [{nis, nama, jumlahAda}]
+let isian = {};        // nis -> string nominal (keadaan isian saat ini, bisa diedit)
+let tanggalAda = [];
+
+const $ = id => document.getElementById(id);
+const rp = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const angka = v => parseInt(String(v == null ? '' : v).replace(/[^\d]/g, ''), 10) || 0;
+
+function labelTanggal(iso) {
+  const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const p = String(iso || '').split('-');
+  if (p.length !== 3) return iso || '';
+  return parseInt(p[2], 10) + ' ' + bulan[parseInt(p[1], 10) - 1] + ' ' + p[0];
+}
+
+function aturBadge() {
+  const b = $('badge');
+  if (DEMO) { b.className = 'badge demo'; b.textContent = 'MODE DEMO — belum terhubung ke spreadsheet'; }
+  else { b.className = 'badge'; b.textContent = '● Terhubung ke spreadsheet Tabungan-Per-Kelas-7A-9F'; }
+}
+
+function siapkanIsian() {
+  isian = {};
+  siswaAktif.forEach(s => { if (s.jumlahAda > 0) isian[s.nis] = String(s.jumlahAda); });
+}
+
+async function muatDaftar() {
+  const kelas = $('kelas').value;
+  const tanggal = $('tanggal').value;
+  $('daftarTanggal').innerHTML = '<span class="kecil">memuat…</span>';
+  if (DEMO) {
+    siswaAktif = (ROSTER[kelas] || []).map(([nis, nama]) => ({ nis, nama, jumlahAda: 0 }));
+    tanggalAda = [];
+    siapkanIsian(); gambarTabel(); gambarTanggal(); return;
+  }
+  try {
+    const url = WEBAPP_URL + '?action=list&kelas=' + encodeURIComponent(kelas) + '&tanggal=' + encodeURIComponent(tanggal);
+    const r = await fetch(url);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.pesan || 'Gagal memuat');
+    siswaAktif = d.siswa;
+    tanggalAda = d.daftarTanggal || [];
+    siapkanIsian(); gambarTabel(); gambarTanggal();
+  } catch (e) {
+    $('tabel').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#c53030">Gagal memuat daftar murid: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+function gambarTanggal() {
+  const labelPilih = labelTanggal($('tanggal').value);
+  $('daftarTanggal').innerHTML = tanggalAda.length
+    ? tanggalAda.map(t => `<span class="chip${t === labelPilih ? ' aktif' : ''}">${esc(t)}</span>`).join('')
+    : '<span class="kecil">belum ada — tanggal yang dipilih akan menjadi kolom pertama</span>';
+}
+
+function gambarTabel() {
+  const q = $('saring').value.trim().toLowerCase();
+  const rows = siswaAktif
+    .map((s, i) => ({ ...s, no: i + 1 }))
+    .filter(s => !q || s.nama.toLowerCase().includes(q) || s.nis.includes(q));
+  $('tabel').innerHTML = rows.map(s => {
+    const berubah = s.jumlahAda > 0 && angka(isian[s.nis]) !== s.jumlahAda;
+    return `
+    <tr class="${berubah ? 'berubah' : ''}">
+      <td class="no">${s.no}</td>
+      <td>${esc(s.nama)}${s.jumlahAda ? `<span class="tersimpan">tersimpan: ${rp(s.jumlahAda)}</span>` : ''}</td>
+      <td class="nis">${esc(s.nis)}</td>
+      <td style="text-align:right"><input class="nominal" type="text" inputmode="numeric" data-nis="${esc(s.nis)}" placeholder="0" value="${esc(isian[s.nis] || '')}"></td>
+    </tr>`;
+  }).join('')
+    || '<tr><td colspan="4" style="text-align:center;color:#718096">Tidak ada murid yang cocok.</td></tr>';
+  document.querySelectorAll('input.nominal').forEach(inp => inp.addEventListener('input', () => {
+    isian[inp.dataset.nis] = inp.value;
+    hitungTotal();
+  }));
+  hitungTotal();
+}
+
+function hitungTotal() {
+  let n = 0, tot = 0;
+  siswaAktif.forEach(s => {
+    const v = angka(isian[s.nis]);
+    if (v > 0) { n++; tot += v; }
+  });
+  $('jmlIsi').textContent = n + ' murid';
+  $('totalRp').textContent = rp(tot);
+}
+
+function terapkanMassal(hanyaKosong) {
+  const v = angka($('nominalMassal').value);
+  if (!(v > 0)) { $('nominalMassal').focus(); return; }
+  siswaAktif.forEach(s => {
+    if (hanyaKosong && angka(isian[s.nis]) > 0) return;
+    isian[s.nis] = String(v);
+  });
+  gambarTabel();
+}
+
+async function simpan() {
+  const items = [];
+  siswaAktif.forEach(s => {
+    const v = angka(isian[s.nis]);
+    if (v > 0) items.push({ nis: s.nis, jumlah: v });
+  });
+  const lap = $('laporan');
+  if (!items.length) {
+    lap.className = 'panel gagal'; lap.style.display = 'block';
+    lap.innerHTML = '<b>Belum ada isian.</b> Isi nominal minimal satu murid dulu, Pak.';
+    return;
+  }
+  const kelas = $('kelas').value, tanggal = $('tanggal').value;
+  const btn = $('btnSimpan');
+  btn.disabled = true; btn.textContent = 'Menyimpan…';
+  try {
+    if (DEMO) {
+      await new Promise(r => setTimeout(r, 600));
+      lap.className = 'panel ok'; lap.style.display = 'block';
+      lap.innerHTML = `<b>Simulasi berhasil (MODE DEMO).</b><br>${items.length} setoran kelas ${kelas} tanggal ${labelTanggal(tanggal)} — dalam mode demo data <b>tidak</b> masuk ke spreadsheet.`;
+      return;
+    }
+    const r = await fetch(WEBAPP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'simpan', kelas, tanggal, items }) });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.pesan || 'Gagal menyimpan');
+    const namaDari = nis => (siswaAktif.find(s => s.nis === nis) || {}).nama || nis;
+    const berhasil = d.hasil.filter(h => h.ok);
+    const gagal = d.hasil.filter(h => !h.ok);
+    lap.className = 'panel ' + (gagal.length ? 'gagal' : 'ok'); lap.style.display = 'block';
+    lap.innerHTML = `<b>${berhasil.length} setoran tersimpan</b> ke sheet ${esc(d.kelas)} kolom tanggal <b>${esc(d.labelTanggal)}</b>.` +
+      (gagal.length ? '<br>Tidak tersimpan: ' + gagal.map(g => esc(namaDari(g.nis)) + ' (' + esc(g.pesan) + ')').join('; ') : '');
+    await muatDaftar();
+  } catch (e) {
+    lap.className = 'panel gagal'; lap.style.display = 'block';
+    lap.innerHTML = '<b>Gagal menyimpan:</b> ' + esc(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Simpan Setoran';
+  }
+}
+
+$('kelas').innerHTML = KELAS18.map(k => `<option value="${k}">${k}</option>`).join('');
+$('tanggal').value = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+$('kelas').addEventListener('change', muatDaftar);
+$('tanggal').addEventListener('change', muatDaftar);
+$('saring').addEventListener('input', gambarTabel);
+$('btnSemua').addEventListener('click', () => terapkanMassal(false));
+$('btnKosong').addEventListener('click', () => terapkanMassal(true));
+$('btnBersih').addEventListener('click', () => { isian = {}; gambarTabel(); });
+$('btnSimpan').addEventListener('click', simpan);
+aturBadge();
+muatDaftar();
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+APLIKASI INPUT TABUNGAN PER KELAS — SMPN 4 MAJENANG
+====================================================
+
+Untuk menginput setoran tabungan ke spreadsheet "Tabungan-Per-Kelas-7A-9F".
+Sekali simpan, setoran masuk otomatis ke:
+  - sheet kelas yang dipilih (7A–9F),
+  - baris nama murid yang benar (dicocokkan lewat NIS),
+  - kolom tanggal menabungnya (kolom tanggal baru dibuat otomatis
+    bila tanggal itu belum ada; bila 40 kolom bawaan habis, backend
+    menambah kolom sendiri — jadi tanggal tidak terbatas).
+
+ISI PAKET
+---------
+1. index.html — aplikasinya (dibuka di HP/laptop).
+2. Code.gs    — backend yang ditempel di spreadsheet.
+3. PANDUAN.txt — berkas ini.
+
+CARA PAKAI APLIKASI
+-------------------
+1. Pilih kelas.
+2. Pilih tanggal menabung (terisi hari ini; boleh diganti).
+3. Isi nominal murid yang menabung (yang tidak menabung dikosongkan):
+   - ISI SEKALIGUS: bila nominalnya sama untuk banyak murid (mis. setoran
+     awal), isi kolom "Isi Sekaligus" lalu tekan "Terapkan ke Semua Murid"
+     (atau "Terapkan ke yang Masih Kosong"). Setelah itu nominal tiap
+     murid tetap bisa diedit satu-satu pada tabel.
+   - "Bersihkan Isian" mengosongkan semua isian yang belum disimpan.
+4. Tekan "Simpan Setoran". Laporan berhasil/gagal per murid muncul.
+EDIT DATA YANG SUDAH TERSIMPAN: pilih kelas dan tanggal yang sama —
+nilai tersimpan tampil terisi pada kolom nominal; ubah yang keliru lalu
+tekan Simpan Setoran lagi. Nilai pada spreadsheet ikut terganti.
+Data juga selalu bisa diedit manual langsung di spreadsheet-nya.
+
+STATUS PEMASANGAN
+-----------------
+Backend SUDAH dipasang dan aktif (Web App ter-deploy 23 Oktober 2026 dan
+URL-nya sudah terpasang di index.html). Aplikasi yang diterbitkan di
+GitHub langsung terhubung ke spreadsheet.
+Bila suatu saat Code.gs diganti/diperbarui, deploy ulang sebagai
+"Versi baru" pada deployment yang sama agar URL tidak berubah.
+
+1. Buka spreadsheet Tabungan-Per-Kelas-7A-9F.
+2. Menu Ekstensi → Apps Script. Hapus isi editor, tempel seluruh isi
+   Code.gs, lalu simpan (ikon disket / Ctrl+S).
+3. Klik Deploy → Deployment baru → jenis: Aplikasi Web.
+   - Jalankan sebagai: Saya
+   - Yang memiliki akses: Siapa saja yang memiliki tautan
+   Klik Deploy. Bila diminta izin akses spreadsheet, setujui.
+4. Salin URL Web App yang muncul (diawali https://script.google.com/macros/s/).
+5. Kirim URL itu ke asisten (Muse) — nanti URL-nya dipasangkan ke
+   aplikasi dan aplikasinya diterbitkan ke GitHub seperti Pantau
+   Tabungan, supaya tinggal dibuka dari tautan.
+   (Bisa juga dipasang sendiri: buka index.html, cari baris
+   const WEBAPP_URL = ''; dan isi URL di antara tanda kutip.)
+
+PENGGANTIAN VERSI (bila Code.gs diperbarui nanti)
+------------------------------------------------
+Deploy → Kelola deployment → ikon pensil → Versi: Versi baru → Deploy.
+URL tetap sama, tidak berubah.
+
+KEAMANAN SINGKAT
+----------------
+Backend hanya menulis nominal ke sel tanggal pada baris murid di sheet
+kelasnya; tidak ada penghapusan data. Kesalahan tanggal/nominal dapat
+diperbaiki langsung di spreadsheet, atau dengan menginput ulang pada
+tanggal yang sama (nilai lama diganti).
